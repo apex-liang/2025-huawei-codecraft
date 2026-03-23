@@ -4,7 +4,8 @@ void do_object_write_my(int object_id, int size, int label) {
     int current_write_point=0;
     unordered_set<int> exist;
     set<pair<int,int>>::iterator it;
-    for(int i=0;i<label_block[label].size();i++)
+	//存储备份一
+    for(int i=0;i<label_block[label].size();i++)//每次都去队列的头部开始拿，所以会优先存满一个扇区
     {
         if(i==0) it=label_block[label].begin();
         if (current_replica_index >= 1) break;
@@ -29,11 +30,11 @@ void do_object_write_my(int object_id, int size, int label) {
         }
         it++;
     }
-
+	//存储备份一
     for(int x=object_id;x<object_id+N;x++)
     {
         if (current_replica_index >= 1) break;
-        int disk_id=x%N+1;
+        int disk_id=x%N+1;//通过哈希值，避免每次每个对象来都从第一个磁盘开始，使得第一个磁盘耗尽太快
         if(find(exist.begin(),exist.end(),disk_id)==exist.end()&&free_space_block[disk_id].size()>0){
             int block_id=*(free_space_block[disk_id].begin());
             free_space_block[disk_id].erase(free_space_block[disk_id].begin());
@@ -65,6 +66,7 @@ void do_object_write_my(int object_id, int size, int label) {
         {
             for(int block_id=1;block_id<=disk_block_num;block_id++)
             {
+				// 如果当前块剩余块大小大于目前遍历到的最大剩余而且之前没存过（废话就不可能存过）而且当前块距离上次被抢占已经过去5个时间段了
                 if((disk_label_able[disk_id][block_id].size()>max_size)&&find(exist.begin(),exist.end(),disk_id)==exist.end() &&time_stemp > 5 + disk_block_time[disk_id][block_id])
                 {
                     max_size=disk_label_able[disk_id][block_id].size();
@@ -72,10 +74,11 @@ void do_object_write_my(int object_id, int size, int label) {
                 }
             }
         }
+		// 得到的最优抢占块在Pos_tmp中
         int disk_id=pos_tmp.first;
         int block_id=pos_tmp.second;
-        label_block[disk_block[disk_id][block_id]].erase(find(label_block[disk_block[disk_id][block_id]].begin(),label_block[disk_block[disk_id][block_id]].end(),pos_tmp));
-        label_block[label].insert(pos_tmp);
+        label_block[disk_block[disk_id][block_id]].erase(find(label_block[disk_block[disk_id][block_id]].begin(),label_block[disk_block[disk_id][block_id]].end(),pos_tmp));//从旧标签中移除
+        label_block[label].insert(pos_tmp);//放进新标签中
         disk_block_time[disk_id][block_id] = time_stemp;
         disk_block[disk_id][block_id]=label;
         object[object_id].replica[++current_replica_index] = disk_id;  // 选中该磁盘
@@ -95,7 +98,7 @@ void do_object_write_my(int object_id, int size, int label) {
             }
     }
 
-
+	// 备份二和三的存储
     for(int x=object_id;x<object_id+N;x++)
     {
         if (current_replica_index >= 3) break;
