@@ -19,8 +19,8 @@ void do_read_action_point_my(int point_id,int left_pos,int right_pos,int i,int &
         printf("j %d\n",x);
         disk_point[i][point_id]=x;
         pre_token_disk[i][point_id]=0;
-    }
-    else if((read_map_all[i][disk_point[i][point_id]+G]-read_map_all[i][disk_point[i][point_id]]) == 0)
+    }//当前位置到磁针末尾没有读取请求就不读了，或者超过磁针寻道最右侧
+    else if((read_map_all[i][disk_point[i][point_id]+G]-read_map_all[i][disk_point[i][point_id]]) == 0)//从当前磁针位置开始到+G（最大移动量）内读请求总数量
     {
         int x=disk_point[i][point_id]+G;
         while(x<16000&&(read_map_all[i][x]-read_map_all[i][disk_point[i][point_id]])==0) x++;
