@@ -7,7 +7,7 @@ void timestamp_action()
 
     fflush(stdout);
 }
-void update_mid()
+void update_mid()//修改磁针分界点
 {
     for(int i=1;i<=N;i++)
     {
@@ -100,7 +100,7 @@ void preallocation(){  // 预分配每个label的片片
     st_preallocation[1] = 1;
     int last_label = 1;
     preallocation_label[1] = 1;
-    for(int i = 2 ; i <= M ;i++){
+    for(int i = 2 ; i <= M ;i++){//确认预分配的顺序
     	for(int j = M ; j >= 1 ; j--){
     		int want_allocation_label = xjb_rank[last_label][j].second;//用到了xjb排名，
     		if( !st_preallocation[want_allocation_label]){
@@ -114,7 +114,7 @@ void preallocation(){  // 预分配每个label的片片
 	
     int now_block = 1;
     int now_disk_id = 1;
-    for(int i = M ;i >= 1 ; i--){
+    for(int i = M ;i >= 1 ; i--){//跨磁盘轮询式分配
     //for(int i = 1 ;i <= M ; i++){
     	int want_allocation_label = preallocation_label[i];
     	int demand_preallocation = demand[want_allocation_label][preallocation_time];
@@ -174,10 +174,10 @@ void update()
         xjb[i]=100*read_demand[time_stemp][i]/demand[i][time_stemp];
         read_demand_all_label+=read_demand[time_stemp][i];
     }
-    xjb_avr=72*read_demand_all_label/demand_all_label[time_stemp];
+    xjb_avr=72*read_demand_all_label/demand_all_label[time_stemp];//阈值调参点
     
     label_need_read.clear();
-    for(int i=1;i<=M;i++)
+    for(int i=1;i<=M;i++)//只有大于阈值的才需要读取
     {
         if(xjb[i]>=xjb_avr)
             label_need_read.insert(i);
@@ -241,30 +241,30 @@ void update()
 		   else disk_point_mid[disk_id] = (block_information[disk_id][time_stemp].middle ) * block_size;
 		}
 	}*/
-	if(time_stemp<=100){//计算所有需要读取的label在当前disk中有多少个块
+	if(time_stemp<=100){//计算所有需要读取的label在当前disk中有多少个块，time_stemp是时间段的意思
 	for(int disk_id = 1 ; disk_id <= 10 ; disk_id++){
     	for(int block_id = 1 ; block_id <= disk_block_num ; block_id++){
-    		if( find(label_need_read.begin(),label_need_read.end(),disk_block[disk_id][block_id])!=label_need_read.end()){
-    			block_information[disk_id][time_stemp].all ++ ;
+    		if( find(label_need_read.begin(),label_need_read.end(),disk_block[disk_id][block_id])!=label_need_read.end()){//需要读的块就+1
+    			block_information[disk_id][time_stemp].all ++ ;//存储了当前磁盘的当前时间段总共要读取块的数量
 			}
 		}
 	}
-	 int free_to_divide=V-max_demand_all_label*2/N-k_new;
+	 int free_to_divide=V-max_demand_all_label*2/N-k_new;//总共用来给备份一的区域大小
     block_size=free_to_divide/disk_block_num;
-	//预设起始、末尾、中间的块
+	//预设起始、末尾、中间的块，粗划定每个磁针的动作范围
     for(int disk_id = 1 ; disk_id <= 10 ; disk_id++){
 		int cnt = 0;
     	for(int block_id = 1 ; block_id <= disk_block_num ; block_id++){
     		if( find(label_need_read.begin(),label_need_read.end(),disk_block[disk_id][block_id])!=label_need_read.end()){
     			cnt++;
-    			if(cnt == 1) 	block_information[disk_id][time_stemp].start = block_id;
-    			if(cnt == (block_information[disk_id][time_stemp].all  / 2 + 1)) block_information[disk_id][time_stemp].middle = block_id;
-    			if(cnt == block_information[disk_id][time_stemp].all ) block_information[disk_id][time_stemp].end = block_id;
+    			if(cnt == 1) 	block_information[disk_id][time_stemp].start = block_id;//磁针起始位置
+    			if(cnt == (block_information[disk_id][time_stemp].all  / 2 + 1)) block_information[disk_id][time_stemp].middle = block_id;//磁针中间位置
+    			if(cnt == block_information[disk_id][time_stemp].all ) block_information[disk_id][time_stemp].end = block_id;//磁针末尾
 			}
 		}
 		if(block_information[disk_id][time_stemp].all == 0 || block_information[disk_id][time_stemp].all == 1)disk_point_mid[disk_id] = max( (block_information[disk_id][time_stemp].middle ) * block_size - block_size/2 , 1);
 		else {
-		   if(time_stemp <= 24 )disk_point_mid[disk_id] = (block_information[disk_id][time_stemp].middle ) * block_size - block_size/2;
+		   if(time_stemp <= 24 )disk_point_mid[disk_id] = (block_information[disk_id][time_stemp].middle ) * block_size - block_size/2;//针对性调参
 		   else disk_point_mid[disk_id] = (block_information[disk_id][time_stemp].middle ) * block_size;
 		}
 	}
@@ -314,7 +314,7 @@ void update()
     // }
     // ifs.close();
     }
-    else
+    else//第100个时间段之后（赛题场景来说永远进不来）
     {
         for(int disk_id = 1 ; disk_id <= 10 ; disk_id++){
     	for(int block_id = 1 ; block_id <= disk_block_num ; block_id++){
@@ -352,7 +352,7 @@ void update()
         
 }
 
-void hot_allocate(){
+void hot_allocate(){//热度匹配，后面没用了
 	for(int i = 1 ;i <= M ;i++){
 		for(int j = 1 ; j <= M ;j++){
 			for(int k = 1; k <= (T - 1) / FRE_PER_SLICING + 1; k++ ){
@@ -375,7 +375,7 @@ void xjb_allocate(){
 	    }
 	}
     
-	for(int i = 1 ;i <= M ;i++){
+	for(int i = 1 ;i <= M ;i++){//性价比匹配
 		for(int j = 1 ; j <= M ;j++){
 			for(int k = 1; k <= (T - 1) / FRE_PER_SLICING + 1; k++ ){
 				xjb_company[i][j] += (xjb[k][i] / 100)* (xjb[k][j] / 100);
@@ -399,7 +399,7 @@ void initialize()
         for(int block_id=1;block_id<=disk_block_num;block_id++)
         {
             for(int i=(block_id-1)*block_size+1;i<=block_size*block_id;i++)
-                disk_label_able[disk_id][block_id].insert(i);
+                disk_label_able[disk_id][block_id].insert(i);//记录每个磁盘每个扇区的可用块数量
             free_space_block[disk_id].insert(block_id);
         }
         disk_begin[disk_id]=block_size*disk_block_num+1;
